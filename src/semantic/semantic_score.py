@@ -140,51 +140,49 @@ def _keyword_found(text: str, keyword: str) -> bool:
 
 
 def semantic_score(candidate: Dict[str, Any]) -> float:
-    """
-    Semantic relevance score.
-
-    Career evidence = 70%
-    Skill evidence = 30%
-
-    Output:
-        0.0 -> 1.0
-    """
-
     career_text = _career_text(candidate)
     skills_text = _skills_text(candidate)
 
     career_score = 0.0
     skills_score = 0.0
-    matched_groups = 0
+
+    matched_career_groups = 0
 
     for _, spec in SEMANTIC_GROUPS.items():
 
         career_match = any(
-            _keyword_found(career_text, kw)
-            for kw in spec["keywords"]
+            _keyword_found(career_text, keyword)
+            for keyword in spec["keywords"]
         )
 
         skills_match = any(
-            _keyword_found(skills_text, kw)
-            for kw in spec["keywords"]
+            _keyword_found(skills_text, keyword)
+            for keyword in spec["keywords"]
         )
 
         if career_match:
             career_score += spec["weight"]
-            matched_groups += 1
+            matched_career_groups += 1
 
         elif skills_match:
             skills_score += spec["weight"]
 
-    score = (0.70 * career_score) + (0.30 * skills_score)
+    score = (
+        (0.70 * career_score)
+        +
+        (0.30 * skills_score)
+    )
 
-    if matched_groups == 2:
+    if matched_career_groups == 2:
         score += 2.0
-    elif matched_groups == 3:
+
+    elif matched_career_groups == 3:
         score += 4.0
-    elif matched_groups == 4:
+
+    elif matched_career_groups == 4:
         score += 6.0
-    elif matched_groups >= 5:
+
+    elif matched_career_groups >= 5:
         score += 8.0
 
     score = min(score, 100.0)

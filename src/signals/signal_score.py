@@ -43,12 +43,12 @@ def behavior_score(candidate: Dict[str, Any]) -> float:
     score += _normalize(
         s.get("profile_completeness_score", 0),
         100.0
-    ) * 0.30
+    ) * 0.25
 
     score += _normalize(
         s.get("github_activity_score", 0),
         10.0
-    ) * 0.25
+    ) * 0.28
 
     score += _normalize(
         s.get("interview_completion_rate", 0),
@@ -63,7 +63,7 @@ def behavior_score(candidate: Dict[str, Any]) -> float:
     score += _normalize(
         s.get("saved_by_recruiters_30d", 0),
         10.0
-    ) * 0.05
+    ) * 0.08
 
     score += _normalize(
         s.get("profile_views_received_30d", 0),
