@@ -1,152 +1,253 @@
 import json
 import sys
 import os
-from collections import defaultdict
 
-sys.path.append(os.path.abspath("src"))
-sys.path.append(os.path.abspath("src/jd"))
+sys.path.append(
+    os.path.abspath("src")
+)
+
+sys.path.append(
+    os.path.abspath("src/jd")
+)
 
 from jd_loader import load_jd
 from jd_parser import parse_jd
 from skill_mapper import SKILL_MAP
 
 
-# -----------------------------
-# WEIGHTED SKILL IMPORTANCE
-# -----------------------------
-
-SKILL_WEIGHTS = {
-
-    # Core Retrieval / Ranking (VERY HIGH SIGNAL)
-    "retrieval": 3.0,
-    "ranking": 3.0,
-    "semantic search": 2.8,
-    "recommendation systems": 2.8,
-    "vector search": 2.5,
-
-    # LLM / NLP layer (HIGH but secondary)
-    "nlp": 2.0,
-    "llm": 2.0,
-    "embeddings": 2.2,
-
-    # Fine tuning (medium relevance)
-    "fine-tuning": 1.6,
-
-    # Evaluation (medium-low but important)
-    "evaluation": 1.4,
-
-    # Backend / infra (supporting signal)
-    "backend": 1.0,
-    "feature engineering": 1.0,
-    "cloud": 0.8,
-}
-
-
 def load_candidates():
+
     candidates = []
-    with open("data/candidates.jsonl", "r", encoding="utf-8") as f:
+
+    with open(
+        "data/candidates.jsonl",
+        "r",
+        encoding="utf-8"
+    ) as f:
+
         for line in f:
-            candidates.append(json.loads(line))
+
+            candidates.append(
+                json.loads(line)
+            )
+
     return candidates
 
 
 def normalize_skills(skills):
+
     normalized = set()
 
     for skill in skills:
-        name = skill["name"].lower().strip()
-        normalized.add(name)
 
-        if name in SKILL_MAP:
-            normalized.add(SKILL_MAP[name])
+        skill_name = (
+            skill["name"]
+            .lower()
+            .strip()
+        )
+
+        normalized.add(
+            skill_name
+        )
+
+        if skill_name in SKILL_MAP:
+
+            normalized.add(
+                SKILL_MAP[
+                    skill_name
+                ]
+            )
 
     return normalized
 
+def calculate_score(
+    candidate,
+    required_skills,
+    preferred_skills
+):
 
-def get_skill_weight(skill: str) -> float:
-    return SKILL_WEIGHTS.get(skill.lower(), 0.5)
+    candidate_skills = normalize_skills(
+        candidate["skills"]
+    )
 
+    required_matches = []
+    preferred_matches = []
 
-def calculate_score(candidate, required_skills, preferred_skills):
+    SKILL_WEIGHTS = {
 
-    candidate_skills = normalize_skills(candidate["skills"])
+    "retrieval": 4,
 
-    # -----------------------------
-    # REQUIRED SKILL SCORE
-    # -----------------------------
-    required_score = 0.0
-    required_total_weight = 0.0
+    "ranking": 4,
+
+    "vector database": 4,
+
+    "evaluation": 4,
+
+    "python": 2,
+
+    "backend": 2,
+
+    "cloud": 2,
+
+    "llm": 1,
+
+    "fine-tuning": 1,
+
+    "rag": 1
+}
+
+    required_match_weight = 0
+    total_required_weight = 0
 
     for skill in required_skills:
 
-        s = skill.lower().strip()
-        weight = get_skill_weight(s)
-        required_total_weight += weight
+        weight = SKILL_WEIGHTS.get(
+            skill.lower(),
+            1
+        )
 
-        if s in candidate_skills:
-            required_score += weight
+        total_required_weight += weight
 
-    required_ratio = (
-        required_score / required_total_weight
-        if required_total_weight > 0 else 0
-    )
+        if skill.lower() in candidate_skills:
 
-    # -----------------------------
-    # PREFERRED SKILL SCORE
-    # -----------------------------
-    preferred_score = 0.0
-    preferred_total_weight = 0.0
+            required_matches.append(
+                skill
+            )
+
+            required_match_weight += weight
+
+    preferred_match_weight = 0
+    total_preferred_weight = 0
 
     for skill in preferred_skills:
 
-        s = skill.lower().strip()
-        weight = get_skill_weight(s) * 0.6  # preferred reduced impact
-        preferred_total_weight += weight
+        weight = SKILL_WEIGHTS.get(
+            skill.lower(),
+            1
+        )
 
-        if s in candidate_skills:
-            preferred_score += weight
+        total_preferred_weight += weight
 
-    preferred_ratio = (
-        preferred_score / preferred_total_weight
-        if preferred_total_weight > 0 else 0
-    )
+        if skill.lower() in candidate_skills:
 
-    # -----------------------------
-    # FINAL SCORE (0 → 1)
-    # -----------------------------
+            preferred_matches.append(
+                skill
+            )
+
+            preferred_match_weight += weight
+
+    required_score = 0
+
+    if total_required_weight > 0:
+
+        required_score = (
+
+            required_match_weight
+
+            /
+
+            total_required_weight
+
+        )
+
+    preferred_score = 0
+
+    if total_preferred_weight > 0:
+
+        preferred_score = (
+
+            preferred_match_weight
+
+            /
+
+            total_preferred_weight
+
+        )
+
     final_score = (
-        0.75 * required_ratio +
-        0.25 * preferred_ratio
+
+        0.8 * required_score
+
+        +
+
+        0.2 * preferred_score
+
     )
 
     return {
-        "score": round(final_score, 4),
-        "required_score": round(required_ratio, 4),
-        "preferred_score": round(preferred_ratio, 4),
-        "matched_skills": list(candidate_skills)
-    }
+
+    "score": round(final_score, 4),
+
+    "required_matches": required_matches,
+
+    "preferred_matches": preferred_matches,
+
+    "required_match_count": len(required_matches),
+
+    "preferred_match_count": len(preferred_matches),
+
+    "required_score": round(required_score, 4),
+
+    "preferred_score": round(preferred_score, 4)
+}
 
 
-# -----------------------------
-# TEST RUN
-# -----------------------------
 if __name__ == "__main__":
 
-    jd = load_jd("data/job_description.docx")
+    jd = load_jd(
+        "data/job_description.docx"
+    )
+
     parsed = parse_jd(jd)
-    candidates = load_candidates()
 
-    print("\nTOP 10 CANDIDATES (JD MATCH)\n")
+    candidates = (
+        load_candidates()
+    )
 
-    for c in candidates[:10]:
+    print(
+        "\nTOP 10 CANDIDATES\n"
+    )
+
+    for candidate in candidates[:10]:
 
         result = calculate_score(
-            c,
-            parsed["required_skills"],
-            parsed["preferred_skills"]
+
+            candidate,
+
+            parsed[
+                "required_skills"
+            ],
+
+            parsed[
+                "preferred_skills"
+            ]
+
         )
 
-        print("\nCandidate:", c["candidate_id"])
-        print("Score:", result["score"])
-        print("Required:", result["required_score"])
-        print("Preferred:", result["preferred_score"])
+        print(
+            "\nCandidate:",
+            candidate[
+                "candidate_id"
+            ]
+        )
+
+        print(
+            "Score:",
+            result[
+                "score"
+            ]
+        )
+
+        print(
+            "Required Matches:",
+            result[
+                "required_matches"
+            ]
+        )
+
+        print(
+            "Preferred Matches:",
+            result[
+                "preferred_matches"
+            ]
+        )

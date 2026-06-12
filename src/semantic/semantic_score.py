@@ -13,8 +13,12 @@ SEMANTIC_GROUPS = {
             "vector search",
             "information retrieval",
             "search infrastructure",
+            "bm25",
+            "hybrid retrieval",
+            "embeddings",
         ],
     },
+
     "ranking": {
         "weight": 24,
         "keywords": [
@@ -29,8 +33,9 @@ SEMANTIC_GROUPS = {
             "learning to rank",
         ],
     },
+
     "production_ml": {
-        "weight": 18,
+        "weight": 12,
         "keywords": [
             "production ml",
             "model serving",
@@ -46,6 +51,7 @@ SEMANTIC_GROUPS = {
             "api",
         ],
     },
+
     "nlp_llm": {
         "weight": 14,
         "keywords": [
@@ -60,6 +66,7 @@ SEMANTIC_GROUPS = {
             "language model",
         ],
     },
+
     "evaluation": {
         "weight": 10,
         "keywords": [
@@ -73,6 +80,7 @@ SEMANTIC_GROUPS = {
             "metrics",
         ],
     },
+
     "data_backend": {
         "weight": 10,
         "keywords": [
@@ -164,7 +172,7 @@ def semantic_score(candidate: Dict[str, Any]) -> float:
             career_score += spec["weight"]
             matched_career_groups += 1
 
-        elif skills_match:
+        if skills_match:
             skills_score += spec["weight"]
 
     score = (

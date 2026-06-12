@@ -2,64 +2,67 @@
 
 REQUIRED_SKILLS = [
 
-    # Core AI
+    # Core
 
     "python",
-    "machine learning",
-    "nlp",
 
-    # Retrieval
+    # Retrieval / Search
 
     "retrieval",
-    "semantic search",
-    "information retrieval",
-    "vector search",
-
-    # Ranking
-
     "ranking",
-    "recommendation systems",
+
+    # Production Search Infra
+
+    "vector database",
 
     # Evaluation
 
     "evaluation",
-    "a/b testing",
 
-    # Production
+    # Production Engineering
 
-    "apis",
     "backend",
-    "cloud",
-
-    # Data
-
-    "spark",
-    "airflow",
-    "feature engineering"
-
+    "cloud"
 ]
 
 
 PREFERRED_SKILLS = [
 
+    # Advanced Retrieval
+
+    "semantic search",
+    "information retrieval",
+    "vector search",
+
+    # LLM
+
     "llm",
     "fine-tuning",
     "rag",
-    "vector database",
+
+    # Retrieval Tooling
 
     "milvus",
     "faiss",
     "pinecone",
+    "weaviate",
+    "qdrant",
 
-    "langchain",
-    "llamaindex",
+    # Evaluation Tooling
 
     "weights & biases",
     "mlflow",
 
+    # Production ML
+
+    "spark",
+    "airflow",
+    "feature engineering",
+
+    # Deployment
+
     "docker",
     "kubernetes"
-
 ]
 
 
@@ -73,6 +76,11 @@ NEGATIVE_SIGNALS = [
 
     "langchain only",
 
-    "consulting only"
+    "consulting only",
 
+    "computer vision only",
+
+    "speech only",
+
+    "robotics only"
 ]
