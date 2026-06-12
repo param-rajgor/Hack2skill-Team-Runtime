@@ -1,6 +1,7 @@
 # src/career/career_relevance.py
 
 from career_taxonomy import (
+    SPECIALIST_AI_TITLES,
     HIGH_RELEVANCE_TITLES,
     MEDIUM_RELEVANCE_TITLES,
     LOW_RELEVANCE_TITLES,
@@ -39,17 +40,31 @@ def score_titles(career_history):
 
         role_score = 0
 
+        # strongest signals
+
         if any(
+            role in title
+            for role in SPECIALIST_AI_TITLES
+        ):
+            role_score = 12
+
+        # generic AI/ML roles
+
+        elif any(
             role in title
             for role in HIGH_RELEVANCE_TITLES
         ):
             role_score = 10
+
+        # adjacent engineering roles
 
         elif any(
             role in title
             for role in MEDIUM_RELEVANCE_TITLES
         ):
             role_score = 6
+
+        # weakly related
 
         elif any(
             role in title
@@ -59,7 +74,7 @@ def score_titles(career_history):
 
         score += role_score * weight
 
-        max_score += 10 * weight
+        max_score += 12 * weight
 
     return score, max_score
 
@@ -82,27 +97,19 @@ def score_descriptions(career_history):
             if term in description:
                 matches += 1
 
-        # Prevent huge descriptions from dominating
-        matches = min(matches, 10)
+        # cap to avoid extremely long descriptions
+        matches = min(matches, 12)
 
         score += matches * weight
 
-        max_score += 10 * weight
+        max_score += 12 * weight
 
     return score, max_score
 
 
 def calculate_career_relevance(candidate):
-    """
-    Returns a normalized score between 0 and 1.
 
-    Measures:
-    1. Career Titles
-    2. Career Descriptions
-    3. Recency of Experience
-    """
-
-    career_history = candidate["career_history"]
+    career_history = candidate.get("career_history", [])
 
     if not career_history:
         return 0.0
@@ -111,8 +118,8 @@ def calculate_career_relevance(candidate):
         career_history
     )
 
-    description_score, description_max = score_descriptions(
-        career_history
+    description_score, description_max = (
+        score_descriptions(career_history)
     )
 
     title_component = (
@@ -127,12 +134,18 @@ def calculate_career_relevance(candidate):
         else 0
     )
 
+    # Recruiters trust actual job titles slightly more
+    # than self-written descriptions
+
     final_score = (
 
-        0.60 * title_component +
+        0.65 * title_component +
 
-        0.40 * description_component
+        0.35 * description_component
 
     )
 
-    return round(final_score, 4)
+    return round(
+        min(final_score, 1.0),
+        4
+    )

@@ -1,22 +1,34 @@
 # src/career/career_taxonomy.py
 
-HIGH_RELEVANCE_TITLES = [
+# Highest-value titles directly aligned with JD
 
-    "ml engineer",
-    "machine learning engineer",
-
-    "ai engineer",
+SPECIALIST_AI_TITLES = [
 
     "search engineer",
 
     "recommendation engineer",
 
+    "recommendation systems engineer",
+
     "retrieval engineer",
 
-    "nlp engineer",
+    "nlp engineer"
+]
+
+# Strong but more generic AI/ML roles
+
+HIGH_RELEVANCE_TITLES = [
+
+    "ml engineer",
+
+    "machine learning engineer",
+
+    "ai engineer",
 
     "applied scientist"
 ]
+
+# Adjacent technical roles
 
 MEDIUM_RELEVANCE_TITLES = [
 
@@ -33,6 +45,8 @@ MEDIUM_RELEVANCE_TITLES = [
     "cloud engineer"
 ]
 
+# Weakly related
+
 LOW_RELEVANCE_TITLES = [
 
     "frontend engineer",
@@ -42,36 +56,59 @@ LOW_RELEVANCE_TITLES = [
     "devops engineer"
 ]
 
+# JD-aligned keywords found inside work descriptions
+
 RELEVANT_DESCRIPTION_TERMS = [
 
     "retrieval",
+
     "ranking",
+
     "recommendation",
 
-    "semantic search",
+    "recommendation system",
+
     "search",
+
+    "semantic search",
+
+    "vector search",
 
     "embeddings",
 
     "evaluation",
 
     "machine learning",
+
     "deep learning",
 
     "nlp",
 
+    "llm",
+
+    "rag",
+
     "vector database",
 
     "faiss",
+
     "milvus",
+
     "pinecone",
-
-    "llm",
-
-    "airflow",
-    "spark",
 
     "feature engineering",
 
-    "model"
+    "airflow",
+
+    "spark",
+
+    "model serving",
+
+    "ab testing",
+
+    "ndcg",
+
+    "mrr",
+
+    "map"
 ]
