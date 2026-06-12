@@ -170,7 +170,7 @@ def signal_score(candidate: Dict[str, Any]) -> Dict[str, float]:
 
     blended = round(
         (0.8 * behavior) +
-        (0.2 * logistics)
+        (0.2 * logistics),4
         
     )
 
