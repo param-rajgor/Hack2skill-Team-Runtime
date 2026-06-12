@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Dict, Any
 
-
 SEMANTIC_GROUPS = {
     "retrieval": {
         "weight": 24,
@@ -98,20 +97,27 @@ def _normalize_text(value: Any) -> str:
     return str(value).lower().strip()
 
 
-def _collect_candidate_text(candidate: Dict[str, Any]) -> str:
+def _career_text(candidate: Dict[str, Any]) -> str:
     parts = []
 
     profile = candidate.get("profile", {}) or {}
-    for key in ("headline", "summary", "current_title", "current_company", "current_industry"):
+
+    for key in ("headline", "summary", "current_title"):
         value = profile.get(key)
         if value:
             parts.append(_normalize_text(value))
 
     for job in candidate.get("career_history", []) or []:
-        for key in ("title", "company", "industry", "description"):
+        for key in ("title", "description"):
             value = job.get(key)
             if value:
                 parts.append(_normalize_text(value))
+
+    return " ".join(parts)
+
+
+def _skills_text(candidate: Dict[str, Any]) -> str:
+    parts = []
 
     for skill in candidate.get("skills", []) or []:
         name = skill.get("name")
@@ -123,6 +129,7 @@ def _collect_candidate_text(candidate: Dict[str, Any]) -> str:
 
 def _keyword_found(text: str, keyword: str) -> bool:
     keyword = keyword.lower().strip()
+
     if not keyword:
         return False
 
@@ -134,24 +141,43 @@ def _keyword_found(text: str, keyword: str) -> bool:
 
 def semantic_score(candidate: Dict[str, Any]) -> float:
     """
-    Measures whether the candidate's actual career history
-    resembles the target JD, even if the exact wording differs.
+    Semantic relevance score.
+
+    Career evidence = 70%
+    Skill evidence = 30%
 
     Output:
-        0.0 to 100.0
+        0.0 -> 1.0
     """
-    text = _collect_candidate_text(candidate)
 
+    career_text = _career_text(candidate)
+    skills_text = _skills_text(candidate)
+
+    career_score = 0.0
+    skills_score = 0.0
     matched_groups = 0
-    score = 0.0
 
     for _, spec in SEMANTIC_GROUPS.items():
-        if any(_keyword_found(text, keyword) for keyword in spec["keywords"]):
-            matched_groups += 1
-            score += spec["weight"]
 
-    # Small bonus for breadth: candidates matching more distinct semantic areas
-    # are slightly better than candidates matching only one.
+        career_match = any(
+            _keyword_found(career_text, kw)
+            for kw in spec["keywords"]
+        )
+
+        skills_match = any(
+            _keyword_found(skills_text, kw)
+            for kw in spec["keywords"]
+        )
+
+        if career_match:
+            career_score += spec["weight"]
+            matched_groups += 1
+
+        elif skills_match:
+            skills_score += spec["weight"]
+
+    score = (0.70 * career_score) + (0.30 * skills_score)
+
     if matched_groups == 2:
         score += 2.0
     elif matched_groups == 3:
@@ -161,4 +187,6 @@ def semantic_score(candidate: Dict[str, Any]) -> float:
     elif matched_groups >= 5:
         score += 8.0
 
-    return round(min(score, 100.0), 2)
+    score = min(score, 100.0)
+
+    return round(score / 100.0, 4)
