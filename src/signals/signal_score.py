@@ -127,8 +127,7 @@ def logistics_score(candidate: Dict[str, Any]) -> float:
         p.get("country", "") or ""
     ).strip().lower()
 
-    if country == "india":
-        score += 3.0
+    
 
     work_mode = str(
         s.get("preferred_work_mode", "") or ""
@@ -170,9 +169,9 @@ def signal_score(candidate: Dict[str, Any]) -> Dict[str, float]:
     logistics = logistics_score(candidate)
 
     blended = round(
-        (0.75 * behavior) +
-        (0.25 * logistics),
-        4
+        (0.8 * behavior) +
+        (0.2 * logistics)
+        
     )
 
     return {
