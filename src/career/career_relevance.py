@@ -1,81 +1,138 @@
 # src/career/career_relevance.py
 
-from career_taxonomy import *
+from career_taxonomy import (
+    HIGH_RELEVANCE_TITLES,
+    MEDIUM_RELEVANCE_TITLES,
+    LOW_RELEVANCE_TITLES,
+    RELEVANT_DESCRIPTION_TERMS
+)
+
+
+def get_role_weight(index):
+    """
+    Recruiters care more about recent roles.
+
+    Current Role  -> 1.0
+    Previous Role -> 0.7
+    Older Roles   -> 0.5
+    """
+
+    if index == 0:
+        return 1.0
+
+    elif index == 1:
+        return 0.7
+
+    return 0.5
+
 
 def score_titles(career_history):
 
     score = 0
+    max_score = 0
 
-    for job in career_history:
+    for index, job in enumerate(career_history):
+
+        weight = get_role_weight(index)
 
         title = job["title"].lower()
 
-        if any(role in title for role in HIGH_RELEVANCE_TITLES):
-            score += 10
+        role_score = 0
 
-        elif any(role in title for role in MEDIUM_RELEVANCE_TITLES):
-            score += 6
+        if any(
+            role in title
+            for role in HIGH_RELEVANCE_TITLES
+        ):
+            role_score = 10
 
-        elif any(role in title for role in LOW_RELEVANCE_TITLES):
-            score += 3
+        elif any(
+            role in title
+            for role in MEDIUM_RELEVANCE_TITLES
+        ):
+            role_score = 6
 
-    return score
+        elif any(
+            role in title
+            for role in LOW_RELEVANCE_TITLES
+        ):
+            role_score = 3
+
+        score += role_score * weight
+
+        max_score += 10 * weight
+
+    return score, max_score
+
 
 def score_descriptions(career_history):
 
     score = 0
+    max_score = 0
 
-    for job in career_history:
+    for index, job in enumerate(career_history):
+
+        weight = get_role_weight(index)
 
         description = job["description"].lower()
+
+        matches = 0
 
         for term in RELEVANT_DESCRIPTION_TERMS:
 
             if term in description:
-                score += 1
+                matches += 1
 
-    return score
+        # Prevent huge descriptions from dominating
+        matches = min(matches, 10)
 
-def current_role_bonus(candidate):
+        score += matches * weight
 
-    current_title = candidate["profile"]["current_title"].lower()
+        max_score += 10 * weight
 
-    if any(
-        role in current_title
-        for role in HIGH_RELEVANCE_TITLES
-    ):
-        return 5
+    return score, max_score
 
-    elif any(
-        role in current_title
-        for role in MEDIUM_RELEVANCE_TITLES
-    ):
-        return 3
-
-    return 0
 
 def calculate_career_relevance(candidate):
+    """
+    Returns a normalized score between 0 and 1.
+
+    Measures:
+    1. Career Titles
+    2. Career Descriptions
+    3. Recency of Experience
+    """
 
     career_history = candidate["career_history"]
 
-    title_score = score_titles(career_history)
+    if not career_history:
+        return 0.0
 
-    description_score = score_descriptions(career_history)
+    title_score, title_max = score_titles(
+        career_history
+    )
 
-    current_bonus = current_role_bonus(candidate)
+    description_score, description_max = score_descriptions(
+        career_history
+    )
 
-    raw_score = (
+    title_component = (
+        title_score / title_max
+        if title_max > 0
+        else 0
+    )
 
-        0.50 * title_score +
+    description_component = (
+        description_score / description_max
+        if description_max > 0
+        else 0
+    )
 
-        0.30 * description_score +
+    final_score = (
 
-        0.20 * current_bonus
+        0.60 * title_component +
+
+        0.40 * description_component
 
     )
 
-    max_possible = 25
-
-    normalized = min(raw_score / max_possible, 1.0)
-
-    return round(normalized, 4)
+    return round(final_score, 4)
