@@ -32,65 +32,81 @@ def _normalize(value: Any, max_value: float) -> float:
 
 def behavior_score(candidate: Dict[str, Any]) -> float:
     """
-    Recruitability / engagement score.
-
-    Strong signals:
-    - profile completeness
-    - GitHub activity
-    - interview completion
-    - recruiter response rate
-
-    Weak signals:
-    - verified email
-    - verified phone
-    - LinkedIn connected
+    Output:
+        0.0 -> 1.0
     """
+
     s = _signals(candidate)
 
     score = 0.0
 
-    score += _normalize(s.get("profile_completeness_score", 0), 100.0) * 0.30
-    score += _normalize(s.get("github_activity_score", 0), 10.0) * 0.25
-    score += _normalize(s.get("interview_completion_rate", 0), 1.0) * 0.25
-    score += _normalize(s.get("recruiter_response_rate", 0), 1.0) * 0.12
-    score += _normalize(s.get("saved_by_recruiters_30d", 0), 10.0) * 0.05
-    score += _normalize(s.get("profile_views_received_30d", 0), 250.0) * 0.02
+    score += _normalize(
+        s.get("profile_completeness_score", 0),
+        100.0
+    ) * 0.25
+
+    score += _normalize(
+        s.get("github_activity_score", 0),
+        10.0
+    ) * 0.28
+
+    score += _normalize(
+        s.get("interview_completion_rate", 0),
+        1.0
+    ) * 0.25
+
+    score += _normalize(
+        s.get("recruiter_response_rate", 0),
+        1.0
+    ) * 0.12
+
+    score += _normalize(
+        s.get("saved_by_recruiters_30d", 0),
+        10.0
+    ) * 0.08
+
+    score += _normalize(
+        s.get("profile_views_received_30d", 0),
+        250.0
+    ) * 0.02
 
     if s.get("open_to_work_flag", False):
         score += 3.0
 
     if s.get("verified_email", False):
-        score += 1.0
+        score += 0.2
 
     if s.get("verified_phone", False):
-        score += 1.0
+        score += 0.2
 
     if s.get("linkedin_connected", False):
-        score += 0.5
+        score += 0.1
 
-    applications = _num(s.get("applications_submitted_30d", 0))
+    applications = _num(
+        s.get("applications_submitted_30d", 0)
+    )
+
     if applications > 0:
         score += min(applications, 10.0) * 0.1
 
-    return round(_clamp(score), 2)
+    return round(_clamp(score) / 100.0, 4)
 
 
 def logistics_score(candidate: Dict[str, Any]) -> float:
     """
-    Hireability / logistics score.
-
-    Focuses on:
-    - notice period
-    - willingness to relocate
-    - location fit
-    - preferred work mode
+    Output:
+        0.0 -> 1.0
     """
+
     s = _signals(candidate)
     p = _profile(candidate)
 
     score = 100.0
 
-    notice = _num(s.get("notice_period_days", 0))
+    notice = _num(
+        s.get("notice_period_days", 0)
+    )
+
     if notice > 180:
         score -= 25.0
     elif notice > 120:
@@ -107,35 +123,57 @@ def logistics_score(candidate: Dict[str, Any]) -> float:
     else:
         score -= 6.0
 
-    country = str(p.get("country", "") or "").strip().lower()
+    country = str(
+        p.get("country", "") or ""
+    ).strip().lower()
+
     if country == "india":
         score += 3.0
 
-    work_mode = str(s.get("preferred_work_mode", "") or "").strip().lower()
+    work_mode = str(
+        s.get("preferred_work_mode", "") or ""
+    ).strip().lower()
+
     if work_mode in {"onsite", "hybrid"}:
         score += 2.0
+
     elif work_mode == "remote":
         score -= 2.0
 
-    salary_range = s.get("expected_salary_range_inr_lpa", {}) or {}
-    min_salary = _num(salary_range.get("min", 0))
+    salary_range = (
+        s.get("expected_salary_range_inr_lpa", {})
+        or {}
+    )
+
+    min_salary = _num(
+        salary_range.get("min", 0)
+    )
+
     if 0 < min_salary <= 10:
         score += 1.0
+
     elif min_salary >= 50:
         score -= 2.0
 
-    return round(_clamp(score), 2)
+    return round(_clamp(score) / 100.0, 4)
 
 
 def signal_score(candidate: Dict[str, Any]) -> Dict[str, float]:
     """
-    Convenience wrapper for downstream integration.
-    Returns both sub-scores plus a blended helper score.
+    Returns normalized scores.
+
+    Output:
+        0.0 -> 1.0
     """
+
     behavior = behavior_score(candidate)
     logistics = logistics_score(candidate)
 
-    blended = round(0.75 * behavior + 0.25 * logistics, 2)
+    blended = round(
+        (0.75 * behavior) +
+        (0.25 * logistics),
+        4
+    )
 
     return {
         "behavior_score": behavior,

@@ -1,19 +1,21 @@
 import json
 import csv
+from pathlib import Path
 
 from src.semantic.semantic_score import semantic_score
 from src.signals.signal_score import (
     behavior_score,
     logistics_score,
-    signal_score
+    signal_score,
 )
-
 
 INPUT_FILE = "data/candidates.jsonl"
 OUTPUT_FILE = "outputs/semantic_signal_scores.csv"
 
 
 def main():
+
+    Path("outputs").mkdir(exist_ok=True)
 
     with open(INPUT_FILE, "r", encoding="utf-8") as infile, \
          open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as outfile:
@@ -25,7 +27,7 @@ def main():
             "semantic_score",
             "behavior_score",
             "logistics_score",
-            "signal_score"
+            "signal_score",
         ])
 
         count = 0
@@ -47,16 +49,17 @@ def main():
                 sem_score,
                 beh_score,
                 log_score,
-                sig_score
+                sig_score,
             ])
 
             count += 1
 
             if count % 10000 == 0:
-                print(f"Processed {count} candidates")
+                print(f"Processed {count:,} candidates")
 
-    print(f"\nFinished processing {count} candidates")
-    print(f"Saved to {OUTPUT_FILE}")
+    print("\nFinished!")
+    print(f"Total candidates processed: {count:,}")
+    print(f"Output saved to: {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
